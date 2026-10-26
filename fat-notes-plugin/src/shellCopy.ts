@@ -6,6 +6,10 @@ export function shellTitle(locale: string | undefined): string {
   return isEnglishLocale(locale) ? "Human Atlas" : "人体图谱";
 }
 
+export function shellStyleTitle(locale: string | undefined): string {
+  return isEnglishLocale(locale) ? "Style" : "样式";
+}
+
 export function shellMissingCopy(locale: string | undefined): { title: string; body: string } {
   if (isEnglishLocale(locale)) {
     return {

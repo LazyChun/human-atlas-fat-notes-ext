@@ -22,7 +22,7 @@
     "panel": false,
     "footer": false,
     "routes": false,
-    "widgetTypes": false
+    "widgetTypes": true
   },
   "permissions": []
 }

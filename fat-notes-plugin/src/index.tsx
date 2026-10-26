@@ -1,9 +1,12 @@
 import React from "react";
 import type { Disposable, FatNotesPluginSDK } from "fat-notes-sdk";
+import AtlasDisplayConfig from "./AtlasDisplayConfig";
 import AtlasPage from "./AtlasPage";
+import { ATLAS_ICON_URL } from "./atlasIcon";
 import { shellTitle } from "./shellCopy";
 
 const PAGE_ID = "human-atlas.main";
+const BLOCK_TYPE = "human-atlas.atlas";
 const disposables: Disposable[] = [];
 
 function readActivityMenuKey(state: unknown): string | undefined {
@@ -29,16 +32,65 @@ export async function activate(sdk: FatNotesPluginSDK): Promise<void> {
       icon: "[icon]UserOutlined",
     });
   };
-  syncActivityTitle(sdk.ui?.i18n?.locale || "zh_CN");
+
+  // 「其他」分类下的仪表盘卡片，做法同 fat-tools.toolSwitcher：
+  // 不依赖宿主查询配置，卡片内容就是图谱页。
+  let blockType: Disposable | null = null;
+  let blockLocale = "";
+  const syncBlockType = (locale: string): void => {
+    if (blockType && locale === blockLocale) return;
+    blockLocale = locale;
+    blockType?.dispose();
+    blockType = null;
+    const register = sdk.contributions.registerBlockType;
+    if (typeof register !== "function") return;
+    try {
+      blockType = register({
+        type: BLOCK_TYPE,
+        title: shellTitle(locale),
+        iconUrl: ATLAS_ICON_URL,
+        category: "other",
+        index: 3,
+        defaultSize: { w: 8, h: 64, minW: 4, minH: 12 },
+        dataConfig: false,
+        render: () => React.createElement(AtlasPage, { sdk }),
+      });
+    } catch (error) {
+      console.warn("[human-atlas] register block failed", error);
+    }
+  };
+
+  const syncLocale = (locale: string): void => {
+    syncActivityTitle(locale);
+    syncBlockType(locale);
+  };
+  syncLocale(sdk.ui?.i18n?.locale || "zh_CN");
   if (sdk.ui?.i18n) {
-    disposables.push(sdk.ui.i18n.onChange(syncActivityTitle));
+    disposables.push(sdk.ui.i18n.onChange(syncLocale));
   }
   disposables.push({
     dispose() {
       activity?.dispose();
       activity = null;
+      blockType?.dispose();
+      blockType = null;
     },
   });
+
+  const registerDisplay = sdk.contributions.registerBlockDisplayConfig;
+  if (typeof registerDisplay === "function") {
+    try {
+      disposables.push(
+        registerDisplay({
+          id: "human-atlas.atlas.config",
+          blockType: BLOCK_TYPE,
+          render: () => React.createElement(AtlasDisplayConfig, { sdk }),
+        }),
+      );
+    } catch (error) {
+      console.warn("[human-atlas] register block display config failed", error);
+    }
+  }
 
   disposables.push(
     sdk.contributions.registerWorkbenchPage({
