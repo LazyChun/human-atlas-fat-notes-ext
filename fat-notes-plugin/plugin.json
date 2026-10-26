@@ -1,0 +1,28 @@
+{
+  "id": "e7a41c90-6b2d-4f58-8c13-9d0a5e2b7f64",
+  "name": "人体图谱",
+  "code": "Human-Atlas",
+  "displayName": "人体图谱",
+  "version": "0.1.0",
+  "description": "交互式三维人体解剖图谱（Human Atlas）",
+  "icon": "[icon]UserOutlined",
+  "engines": {
+    "fat-notes": ">=1.0.0"
+  },
+  "entry": "remoteEntry.js",
+  "main": "dist/remoteEntry.js",
+  "mfName": "plugin_e7a41c90_6b2d_4f58_8c13_9d0a5e2b7f64",
+  "container": "plugin_e7a41c90_6b2d_4f58_8c13_9d0a5e2b7f64",
+  "exposed": "./plugin",
+  "exposeKey": "./plugin",
+  "activationEvents": ["onStartup"],
+  "contributions": {
+    "activityBar": true,
+    "primarySidebar": false,
+    "panel": false,
+    "footer": false,
+    "routes": false,
+    "widgetTypes": false
+  },
+  "permissions": []
+}
