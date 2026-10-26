@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { FatNotesPluginSDK } from "fat-notes-sdk";
+import { shellMissingCopy, shellTitle } from "./shellCopy";
 
 declare let __webpack_public_path__: string;
+
+const HOST_LOCALE = "fat-notes-host";
 
 function resolveDistBase(pluginId: string): string {
   const scripts = document.getElementsByTagName("script");
@@ -17,19 +20,46 @@ function resolveDistBase(pluginId: string): string {
   return "";
 }
 
+function readLocale(sdk: FatNotesPluginSDK): string {
+  return sdk.ui?.i18n?.locale || "zh_CN";
+}
+
 function AtlasFrame({ sdk }: { sdk: FatNotesPluginSDK }) {
   const base = resolveDistBase(sdk.pluginId);
-  const src = base ? `${base}atlas/index.html` : "";
+  const initialLocale = useRef(readLocale(sdk));
+  const page = base ? `${base}atlas/index.html` : "";
+  const src = page ? `${page}?locale=${encodeURIComponent(initialLocale.current)}` : "";
   const [missing, setMissing] = useState(false);
+  const [locale, setLocale] = useState(initialLocale.current);
+  const localeRef = useRef(locale);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  localeRef.current = locale;
+
+  const postLocale = (next: string) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { source: HOST_LOCALE, type: "locale", locale: next },
+      "*",
+    );
+  };
+
+  useEffect(() => {
+    const api = sdk.ui?.i18n;
+    if (!api) return undefined;
+    const sub = api.onChange((next) => {
+      setLocale(next);
+      postLocale(next);
+    });
+    return () => sub.dispose();
+  }, [sdk]);
 
   useEffect(() => {
     if (!src) {
       setMissing(true);
-      return;
+      return undefined;
     }
     let cancelled = false;
     setMissing(false);
-    fetch(src)
+    fetch(page)
       .then((response) => {
         if (!cancelled) setMissing(!response.ok);
       })
@@ -39,15 +69,25 @@ function AtlasFrame({ sdk }: { sdk: FatNotesPluginSDK }) {
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [page]);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data;
+      if (!data || data.source !== "human-atlas" || data.type !== "ready") return;
+      postLocale(localeRef.current);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   if (!src || missing) {
+    const copy = shellMissingCopy(locale);
     return (
       <div style={messageStyle}>
-        <strong>人体图谱还没有构建</strong>
-        <p>
-          在 human-atlas-fat-notes-ext 里先安装上游依赖，再构建插件：
-        </p>
+        <strong>{copy.title}</strong>
+        <p>{copy.body}</p>
         <pre>{`npm ci
 cd fat-notes-plugin
 npm install
@@ -58,8 +98,10 @@ npm run build`}</pre>
 
   return (
     <iframe
-      title="人体图谱"
+      ref={iframeRef}
+      title={shellTitle(locale)}
       src={src}
+      onLoad={() => postLocale(localeRef.current)}
       style={{
         width: "100%",
         height: "100%",

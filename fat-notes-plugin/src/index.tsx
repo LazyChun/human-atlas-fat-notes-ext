@@ -1,6 +1,7 @@
 import React from "react";
 import type { Disposable, FatNotesPluginSDK } from "fat-notes-sdk";
 import AtlasPage from "./AtlasPage";
+import { shellTitle } from "./shellCopy";
 
 const PAGE_ID = "human-atlas.main";
 const disposables: Disposable[] = [];
@@ -14,14 +15,30 @@ function readActivityMenuKey(state: unknown): string | undefined {
 }
 
 export async function activate(sdk: FatNotesPluginSDK): Promise<void> {
-  disposables.push(
-    sdk.contributions.registerActivityBarItem({
+  let activity: Disposable | null = null;
+  let activityLocale = "";
+  const syncActivityTitle = (locale: string): void => {
+    if (activity && locale === activityLocale) return;
+    activityLocale = locale;
+    const title = shellTitle(locale);
+    activity?.dispose();
+    activity = sdk.contributions.registerActivityBarItem({
       id: PAGE_ID,
-      title: "人体图谱",
-      pluginName: "人体图谱",
+      title,
+      pluginName: title,
       icon: "[icon]UserOutlined",
-    }),
-  );
+    });
+  };
+  syncActivityTitle(sdk.ui?.i18n?.locale || "zh_CN");
+  if (sdk.ui?.i18n) {
+    disposables.push(sdk.ui.i18n.onChange(syncActivityTitle));
+  }
+  disposables.push({
+    dispose() {
+      activity?.dispose();
+      activity = null;
+    },
+  });
 
   disposables.push(
     sdk.contributions.registerWorkbenchPage({

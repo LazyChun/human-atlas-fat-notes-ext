@@ -28,4 +28,10 @@ export interface FatNotesPluginSDK {
       cb: (value: T) => void,
     ): Disposable;
   };
+  ui: {
+    i18n: {
+      locale: string;
+      onChange(cb: (locale: string) => void): Disposable;
+    };
+  };
 }
