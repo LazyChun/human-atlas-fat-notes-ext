@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "e7a41c90-6b2d-4f58-8c13-9d0a5e2b7f64",
+  "code": "Human-Atlas",
+  "type": "bespokePlugin",
+  "name": "人体图谱",
+  "description": "交互式三维人体解剖图谱（Human Atlas）",
+  "engines": {
+    "fat-notes": ">=0.1.0"
+  },
+  "features": [
+    {
+      "id": "explorer",
+      "name": "人体图谱",
+      "description": "浏览 BodyParts3D 三维解剖结构，按系统显示、搜索并拆解。",
+      "match": "人体|解剖|图谱|anatomy|atlas|human"
+    }
+  ],
+  "version": "0.1.0",
+  "packageFile": "Human-Atlas_v0.1.0.zip"
+}
